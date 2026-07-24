@@ -105,6 +105,7 @@ input[type="checkbox"] { margin-right: 0.4em; }
 }
 #toolbar button:hover { background: rgba(129, 139, 152, 0.2); }
 #toolbar .check { display: flex; align-items: center; gap: 6px; padding: 3px 10px; }
+#zoomlabel { padding: 0 6px; }
 #toolbar .sep { width: 1px; align-self: stretch; background: #d8dee4; margin: 2px 6px; }
 #copybtn { min-width: 6.5em; }
 #help {
@@ -298,7 +299,7 @@ PAGE = """<!DOCTYPE html>
 <label class="check" title="Show the editable Markdown source (Ctrl+U)"><input type="checkbox" id="rawchk" onchange="showRaw(this.checked)"> Show source</label>
 <span class="sep"></span>
 <button onclick="setZoom(zoom - 0.1)" title="Zoom out (Ctrl+-)">&#128269;&minus;</button>
-<button id="zoomlabel" onclick="setZoom(1.0)" title="Reset zoom (Ctrl+0)">100%</button>
+<span id="zoomlabel" title="Reset with Ctrl+0">100%</span>
 <button onclick="setZoom(zoom + 0.1)" title="Zoom in (Ctrl+=)">&#128269;+</button>
 <span class="sep"></span>
 <button onclick="toggleHelp()" title="Keyboard shortcuts">&#10067; Help</button>
