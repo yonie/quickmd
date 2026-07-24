@@ -322,10 +322,8 @@ PAGE = """<!DOCTYPE html>
 """
 
 WELCOME = ('<div id="welcome"><h1>QuickMD</h1>'
-           '<p>Open a Markdown file with <kbd>Ctrl+O</kbd>,'
-           ' paste clipboard text with <kbd>Ctrl+V</kbd>,<br>'
-           'or switch to Raw with <kbd>Ctrl+U</kbd> to start writing a new one.</p>'
-           '<p>Save your work with <kbd>Ctrl+S</kbd>.</p></div>')
+           '<p>Open a Markdown file to read it, paste text from your clipboard,<br>'
+           'or switch to Raw to start writing a new one.</p></div>')
 
 
 def clipboard_text():
