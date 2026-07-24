@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""QuickMD - a simple Markdown viewer for Linux and Windows."""
+"""QuickMD - a simple Markdown viewer and editor for Linux and Windows."""
 
 import atexit
 import glob

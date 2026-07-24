@@ -1,6 +1,6 @@
 # QuickMD
 
-A simple Markdown viewer for Linux and Windows. Opens a rendered view of a Markdown file without starting an editor or a browser tab.
+A simple Markdown viewer and editor for Linux and Windows. Opens a rendered view of a Markdown file without starting a heavyweight application, and the source view lets you edit and save a copy.
 
 ![QuickMD rendering demo.md](screenshot.png)
 
@@ -78,13 +78,13 @@ Place this desktop entry at `~/.local/share/applications/quickmd.desktop` (updat
 ```ini
 [Desktop Entry]
 Name=QuickMD
-Comment=Quickly view Markdown files
+Comment=Quickly view and edit Markdown files
 Exec=/path/to/quickmd.py %f
 Terminal=false
 Type=Application
 Categories=Utility;Viewer;
 MimeType=text/markdown;
-Keywords=Markdown;Viewer;
+Keywords=Markdown;Viewer;Editor;
 StartupNotify=true
 ```
 
