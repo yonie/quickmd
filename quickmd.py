@@ -61,6 +61,7 @@ body {
     background: #ffffff;
 }
 #content { max-width: 860px; margin: 0 auto; padding: 32px 24px 64px; word-wrap: break-word; }
+#content > :first-child { margin-top: 0; }
 h1, h2, h3, h4, h5, h6 { margin-top: 1.4em; margin-bottom: 0.5em; line-height: 1.25; font-weight: 600; }
 h1 { font-size: 2em; border-bottom: 1px solid #d8dee4; padding-bottom: 0.3em; }
 h2 { font-size: 1.5em; border-bottom: 1px solid #d8dee4; padding-bottom: 0.3em; }
