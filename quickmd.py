@@ -89,6 +89,23 @@ tr:nth-child(2n) { background: #f6f8fa; }
 input[type="checkbox"] { margin-right: 0.4em; }
 .task-list-item { list-style-type: none; }
 .task-list-item input { margin-left: -1.5em; }
+#toolbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 4px;
+    padding: 6px 10px;
+    background: #f6f8fa; border-bottom: 1px solid #d8dee4;
+    font-size: 13px;
+    user-select: none; -webkit-user-select: none;
+}
+#toolbar button {
+    font: inherit; color: inherit;
+    background: transparent; border: 1px solid transparent; border-radius: 6px;
+    padding: 3px 10px;
+}
+#toolbar button:hover { background: rgba(129, 139, 152, 0.2); }
+#toolbar button.active { background: rgba(129, 139, 152, 0.25); border-color: #d8dee4; }
+#toolbar .spacer { flex: 1; }
+#rawview { white-space: pre-wrap; word-break: break-word; }
 #welcome { text-align: center; color: #59636e; margin-top: 30vh; }
 @media (prefers-color-scheme: dark) {
     body { color: #e6edf3; background: #1e1e1e; }
@@ -98,26 +115,87 @@ input[type="checkbox"] { margin-right: 0.4em; }
     pre, .codehilite { background: #2b2b2b; }
     th, td { border-color: #3d444d; }
     tr:nth-child(2n) { background: #262626; }
+    #toolbar { background: #2b2b2b; border-bottom-color: #3d444d; }
+    #toolbar button.active { border-color: #3d444d; }
     #welcome { color: #9198a1; }
 }
 """
 
 SCRIPT = """
+var rawText = __RAW__;
+var rawMode = false;
+var renderedHtml = null;
 var zoom = 1.0;
 try { zoom = parseFloat(sessionStorage.getItem('quickmd-zoom')) || 1.0; } catch (e) {}
 
 function setZoom(z) {
     zoom = Math.min(4, Math.max(0.3, Math.round(z * 10) / 10));
-    document.body.style.zoom = zoom;
+    document.getElementById('content').style.zoom = zoom;
+    document.getElementById('zoomlabel').textContent = Math.round(zoom * 100) + '%';
     try { sessionStorage.setItem('quickmd-zoom', zoom); } catch (e) {}
 }
 setZoom(zoom);
+
+function showRaw(on) {
+    if (on === rawMode) return;
+    var c = document.getElementById('content');
+    if (on) {
+        renderedHtml = c.innerHTML;
+        c.innerHTML = '';
+        var pre = document.createElement('pre');
+        pre.id = 'rawview';
+        pre.textContent = rawText;
+        c.appendChild(pre);
+    } else {
+        c.innerHTML = renderedHtml;
+    }
+    rawMode = on;
+    document.getElementById('rawbtn').classList.toggle('active', on);
+}
+
+function toggleRaw() { showRaw(!rawMode); }
+
+function quickmdUpdate(html, raw) {
+    rawText = raw;
+    renderedHtml = html;
+    if (rawMode) {
+        var pre = document.getElementById('rawview');
+        if (pre) pre.textContent = raw;
+    } else {
+        document.getElementById('content').innerHTML = html;
+    }
+}
+
+function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+}
+
+function doCopy() {
+    var text = window.getSelection().toString() || rawText;
+    function done() {
+        var b = document.getElementById('copybtn');
+        b.textContent = 'Copied';
+        setTimeout(function () { b.textContent = 'Copy'; }, 1200);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+    } else {
+        fallbackCopy(text);
+        done();
+    }
+}
 
 window.addEventListener('keydown', function (e) {
     if (!e.ctrlKey) return;
     if (e.key === '=' || e.key === '+') { setZoom(zoom + 0.1); e.preventDefault(); }
     else if (e.key === '-') { setZoom(zoom - 0.1); e.preventDefault(); }
     else if (e.key === '0') { setZoom(1.0); e.preventDefault(); }
+    else if (e.key === 'u') { toggleRaw(); e.preventDefault(); }
     else if (e.key === 'o') { pywebview.api.open_dialog(); e.preventDefault(); }
     else if (e.key === 'r') { pywebview.api.reload(); e.preventDefault(); }
     else if (e.key === 'w' || e.key === 'q') { pywebview.api.close(); e.preventDefault(); }
@@ -148,6 +226,15 @@ PAGE = """<!DOCTYPE html>
 <style>{css}</style>
 </head>
 <body>
+<div id="toolbar" onmousedown="event.preventDefault()">
+<button onclick="pywebview.api.open_dialog()" title="Open file (Ctrl+O)">Open</button>
+<button id="copybtn" onclick="doCopy()" title="Copy selection, or the whole source (Ctrl+C)">Copy</button>
+<button id="rawbtn" onclick="toggleRaw()" title="Toggle raw Markdown source (Ctrl+U)">Raw</button>
+<span class="spacer"></span>
+<button onclick="setZoom(zoom - 0.1)" title="Zoom out (Ctrl+-)">&minus;</button>
+<button id="zoomlabel" onclick="setZoom(1.0)" title="Reset zoom (Ctrl+0)">100%</button>
+<button onclick="setZoom(zoom + 0.1)" title="Zoom in (Ctrl+=)">+</button>
+</div>
 <div id="content">{body}</div>
 <script>{script}</script>
 </body>
@@ -155,6 +242,13 @@ PAGE = """<!DOCTYPE html>
 """
 
 WELCOME = '<div id="welcome"><h1>QuickMD</h1><p>Open a Markdown file with Ctrl+O</p></div>'
+
+
+def read_raw(path):
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError as e:
+        return "Could not read {}: {}".format(path, e)
 
 
 def render_body(path):
@@ -165,12 +259,12 @@ def render_body(path):
     return markdown.markdown(text, extensions=markdown_extensions())
 
 
-def build_page(body, title, base_dir=None):
+def build_page(body, title, base_dir=None, raw=""):
     base = ""
     if base_dir is not None:
         base = '<base href="{}/">'.format(base_dir.resolve().as_uri())
     return PAGE.format(base=base, title=title, css=CSS + pygments_css(),
-                       body=body, script=SCRIPT)
+                       body=body, script=SCRIPT.replace("__RAW__", json.dumps(raw)))
 
 
 class Api:
@@ -198,7 +292,8 @@ class Api:
         if path is None:
             html = build_page(WELCOME, APP_NAME)
         else:
-            html = build_page(render_body(path), path.name + " - " + APP_NAME, path.parent)
+            html = build_page(render_body(path), path.name + " - " + APP_NAME,
+                              path.parent, read_raw(path))
         temp = self._temp_file()
         with open(temp, "w", encoding="utf-8") as f:
             f.write(html)
@@ -222,8 +317,9 @@ class Api:
         if self._path is None or self._window is None:
             return
         body = render_body(self._path)
+        raw = read_raw(self._path)
         self._window.evaluate_js(
-            "document.getElementById('content').innerHTML = {};".format(json.dumps(body)))
+            "quickmdUpdate({}, {});".format(json.dumps(body), json.dumps(raw)))
 
     def _watch(self):
         while True:
