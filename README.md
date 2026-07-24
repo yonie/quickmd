@@ -136,13 +136,14 @@ Renaming the script to `quickmd.pyw` has the same effect when double-clicking it
 
 | Function | Control |
 |----------|---------|
-| Open file | Ctrl+O or "Open" button |
+| Open file | Ctrl+O or "Open..." button |
 | Reload file | Ctrl+R |
 | Toggle raw source | Ctrl+U or "Raw" button |
 | Copy selection, or the whole source | "Copy" button |
 | Copy selected text | Ctrl+C |
 | Zoom in/out | Ctrl + scroll wheel, Ctrl+= / Ctrl+-, toolbar buttons |
-| Reset zoom | Ctrl+0 or the zoom percentage button |
+| Reset zoom | Ctrl+0 or "1:1" button |
+| Keyboard shortcut overview | "Help" button |
 | Quit | Ctrl+W or Ctrl+Q |
 
 ## License

@@ -105,6 +105,26 @@ input[type="checkbox"] { margin-right: 0.4em; }
 #toolbar button:hover { background: rgba(129, 139, 152, 0.2); }
 #toolbar button.active { background: rgba(129, 139, 152, 0.25); border-color: #d8dee4; }
 #toolbar .spacer { flex: 1; }
+#toolbar .sep { width: 1px; align-self: stretch; background: #d8dee4; margin: 2px 6px; }
+#copybtn { min-width: 6.5em; }
+#zoomlabel { color: #59636e; padding: 0 6px; }
+#help {
+    position: fixed; inset: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+}
+#help[hidden] { display: none; }
+#help .card {
+    background: #ffffff; border-radius: 8px; padding: 20px 28px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); font-size: 14px;
+}
+#help .row { margin: 6px 0; }
+kbd {
+    font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 85%; padding: 0.1em 0.5em;
+    background: rgba(129, 139, 152, 0.18);
+    border: 1px solid #d8dee4; border-radius: 4px;
+}
 #rawview { white-space: pre-wrap; word-break: break-word; }
 #welcome { text-align: center; color: #59636e; margin-top: 30vh; }
 @media (prefers-color-scheme: dark) {
@@ -117,6 +137,10 @@ input[type="checkbox"] { margin-right: 0.4em; }
     tr:nth-child(2n) { background: #262626; }
     #toolbar { background: #2b2b2b; border-bottom-color: #3d444d; }
     #toolbar button.active { border-color: #3d444d; }
+    #toolbar .sep { background: #3d444d; }
+    #zoomlabel { color: #9198a1; }
+    #help .card { background: #2b2b2b; }
+    kbd { border-color: #3d444d; }
     #welcome { color: #9198a1; }
 }
 """
@@ -175,12 +199,19 @@ function fallbackCopy(text) {
     document.body.removeChild(ta);
 }
 
+var copyLabel = document.getElementById('copybtn').textContent;
+
+function toggleHelp() {
+    var h = document.getElementById('help');
+    h.hidden = !h.hidden;
+}
+
 function doCopy() {
     var text = window.getSelection().toString() || rawText;
     function done() {
         var b = document.getElementById('copybtn');
-        b.textContent = 'Copied';
-        setTimeout(function () { b.textContent = 'Copy'; }, 1200);
+        b.textContent = '\\u2714 Copied';
+        setTimeout(function () { b.textContent = copyLabel; }, 1200);
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
@@ -191,6 +222,7 @@ function doCopy() {
 }
 
 window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { document.getElementById('help').hidden = true; return; }
     if (!e.ctrlKey) return;
     if (e.key === '=' || e.key === '+') { setZoom(zoom + 0.1); e.preventDefault(); }
     else if (e.key === '-') { setZoom(zoom - 0.1); e.preventDefault(); }
@@ -227,13 +259,28 @@ PAGE = """<!DOCTYPE html>
 </head>
 <body>
 <div id="toolbar" onmousedown="event.preventDefault()">
-<button onclick="pywebview.api.open_dialog()" title="Open file (Ctrl+O)">Open</button>
-<button id="copybtn" onclick="doCopy()" title="Copy selection, or the whole source (Ctrl+C)">Copy</button>
-<button id="rawbtn" onclick="toggleRaw()" title="Toggle raw Markdown source (Ctrl+U)">Raw</button>
+<button onclick="pywebview.api.open_dialog()" title="Open a file (Ctrl+O)">&#128194; Open...</button>
+<span class="sep"></span>
+<button id="copybtn" onclick="doCopy()" title="Copy selection, or the whole source">&#128196; Copy</button>
+<button id="rawbtn" onclick="toggleRaw()" title="Toggle raw Markdown source (Ctrl+U)">&#128220; Raw</button>
 <span class="spacer"></span>
-<button onclick="setZoom(zoom - 0.1)" title="Zoom out (Ctrl+-)">&minus;</button>
-<button id="zoomlabel" onclick="setZoom(1.0)" title="Reset zoom (Ctrl+0)">100%</button>
-<button onclick="setZoom(zoom + 0.1)" title="Zoom in (Ctrl+=)">+</button>
+<span id="zoomlabel">100%</span>
+<button onclick="setZoom(zoom - 0.1)" title="Zoom out (Ctrl+-)">&#128269;&minus;</button>
+<button onclick="setZoom(1.0)" title="Reset zoom (Ctrl+0)">1:1</button>
+<button onclick="setZoom(zoom + 0.1)" title="Zoom in (Ctrl+=)">&#128269;+</button>
+<span class="sep"></span>
+<button onclick="toggleHelp()" title="Keyboard shortcuts">&#10067; Help</button>
+</div>
+<div id="help" hidden onclick="toggleHelp()">
+<div class="card">
+<div class="row"><kbd>Ctrl+O</kbd> Open a file</div>
+<div class="row"><kbd>Ctrl+C</kbd> Copy selected text</div>
+<div class="row"><kbd>Ctrl+U</kbd> Toggle raw source</div>
+<div class="row"><kbd>Ctrl+R</kbd> Reload file</div>
+<div class="row"><kbd>Ctrl+scroll</kbd> <kbd>Ctrl+=</kbd> <kbd>Ctrl+-</kbd> Zoom</div>
+<div class="row"><kbd>Ctrl+0</kbd> Reset zoom</div>
+<div class="row"><kbd>Ctrl+W</kbd> <kbd>Ctrl+Q</kbd> Quit</div>
+</div>
 </div>
 <div id="content">{body}</div>
 <script>{script}</script>
