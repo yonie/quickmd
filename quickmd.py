@@ -103,7 +103,7 @@ input[type="checkbox"] { margin-right: 0.4em; }
     padding: 3px 10px;
 }
 #toolbar button:hover { background: rgba(129, 139, 152, 0.2); }
-#toolbar button.active { background: rgba(129, 139, 152, 0.25); border-color: #d8dee4; }
+#toolbar .check { display: flex; align-items: center; gap: 6px; padding: 3px 10px; }
 #toolbar .sep { width: 1px; align-self: stretch; background: #d8dee4; margin: 2px 6px; }
 #copybtn { min-width: 6.5em; }
 #help {
@@ -141,7 +141,6 @@ kbd {
     th, td { border-color: #3d444d; }
     tr:nth-child(2n) { background: #262626; }
     #toolbar { background: #2b2b2b; border-bottom-color: #3d444d; }
-    #toolbar button.active { border-color: #3d444d; }
     #toolbar .sep { background: #3d444d; }
     #help .card { background: #2b2b2b; }
     kbd { border-color: #3d444d; }
@@ -187,7 +186,7 @@ function showRaw(on) {
         c.innerHTML = renderedHtml;
     }
     rawMode = on;
-    document.getElementById('rawbtn').classList.toggle('active', on);
+    document.getElementById('rawchk').checked = on;
 }
 
 function toggleRaw() { showRaw(!rawMode); }
@@ -294,7 +293,8 @@ PAGE = """<!DOCTYPE html>
 <span class="sep"></span>
 <button id="copybtn" onclick="doCopy()" title="Copy selection, or the whole source">&#128196; Copy</button>
 <button onclick="doPaste()" title="Paste clipboard text as a new document (Ctrl+V)">&#128203; Paste</button>
-<button id="rawbtn" onclick="toggleRaw()" title="Toggle raw Markdown source (Ctrl+U)">&#128220; Raw</button>
+<span class="sep"></span>
+<label class="check" title="Show the editable Markdown source (Ctrl+U)"><input type="checkbox" id="rawchk" onchange="showRaw(this.checked)"> Show source</label>
 <span class="sep"></span>
 <button onclick="setZoom(zoom - 0.1)" title="Zoom out (Ctrl+-)">&#128269;&minus;</button>
 <button id="zoomlabel" onclick="setZoom(1.0)" title="Reset zoom (Ctrl+0)">100%</button>
@@ -308,7 +308,7 @@ PAGE = """<!DOCTYPE html>
 <div class="row"><kbd>Ctrl+V</kbd> Paste clipboard as a new document</div>
 <div class="row"><kbd>Ctrl+S</kbd> Save a copy</div>
 <div class="row"><kbd>Ctrl+C</kbd> Copy selected text</div>
-<div class="row"><kbd>Ctrl+U</kbd> Toggle raw source</div>
+<div class="row"><kbd>Ctrl+U</kbd> Show or hide the source</div>
 <div class="row"><kbd>Ctrl+R</kbd> Reload file</div>
 <div class="row"><kbd>Ctrl+scroll</kbd> <kbd>Ctrl+=</kbd> <kbd>Ctrl+-</kbd> Zoom</div>
 <div class="row"><kbd>Ctrl+0</kbd> Reset zoom</div>
@@ -323,7 +323,7 @@ PAGE = """<!DOCTYPE html>
 
 WELCOME = ('<div id="welcome"><h1>QuickMD</h1>'
            '<p>Open a Markdown file to read it, paste text from your clipboard,<br>'
-           'or switch to Raw to start writing a new one.</p></div>')
+           'or show the source to start writing a new one.</p></div>')
 
 
 def clipboard_text():
