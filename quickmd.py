@@ -290,10 +290,10 @@ PAGE = """<!DOCTYPE html>
 <body>
 <div id="toolbar" onmousedown="event.preventDefault()">
 <button onclick="pywebview.api.open_dialog()" title="Open a file (Ctrl+O)">&#128194; Open...</button>
-<button onclick="doPaste()" title="Paste clipboard text as a new document (Ctrl+V)">&#128203; Paste</button>
 <button onclick="pywebview.api.save_as(rawText)" title="Save a copy, including your edits (Ctrl+S)">&#128190; Save as...</button>
 <span class="sep"></span>
 <button id="copybtn" onclick="doCopy()" title="Copy selection, or the whole source">&#128196; Copy</button>
+<button onclick="doPaste()" title="Paste clipboard text as a new document (Ctrl+V)">&#128203; Paste</button>
 <button id="rawbtn" onclick="toggleRaw()" title="Toggle raw Markdown source (Ctrl+U)">&#128220; Raw</button>
 <span class="sep"></span>
 <button onclick="setZoom(zoom - 0.1)" title="Zoom out (Ctrl+-)">&#128269;&minus;</button>
