@@ -2,6 +2,8 @@
 
 A simple Markdown viewer for Linux and Windows. Opens a rendered view of a Markdown file without starting an editor or a browser tab.
 
+![QuickMD rendering demo.md](screenshot.png)
+
 ## Features
 
 - Renders Markdown with tables, fenced code blocks and footnotes
