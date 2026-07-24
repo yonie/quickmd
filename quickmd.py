@@ -104,10 +104,8 @@ input[type="checkbox"] { margin-right: 0.4em; }
 }
 #toolbar button:hover { background: rgba(129, 139, 152, 0.2); }
 #toolbar button.active { background: rgba(129, 139, 152, 0.25); border-color: #d8dee4; }
-#toolbar .spacer { flex: 1; }
 #toolbar .sep { width: 1px; align-self: stretch; background: #d8dee4; margin: 2px 6px; }
 #copybtn { min-width: 6.5em; }
-#zoomlabel { color: #59636e; padding: 0 6px; }
 #help {
     position: fixed; inset: 0; z-index: 20;
     display: flex; align-items: center; justify-content: center;
@@ -138,7 +136,6 @@ kbd {
     #toolbar { background: #2b2b2b; border-bottom-color: #3d444d; }
     #toolbar button.active { border-color: #3d444d; }
     #toolbar .sep { background: #3d444d; }
-    #zoomlabel { color: #9198a1; }
     #help .card { background: #2b2b2b; }
     kbd { border-color: #3d444d; }
     #welcome { color: #9198a1; }
@@ -263,10 +260,9 @@ PAGE = """<!DOCTYPE html>
 <span class="sep"></span>
 <button id="copybtn" onclick="doCopy()" title="Copy selection, or the whole source">&#128196; Copy</button>
 <button id="rawbtn" onclick="toggleRaw()" title="Toggle raw Markdown source (Ctrl+U)">&#128220; Raw</button>
-<span class="spacer"></span>
-<span id="zoomlabel">100%</span>
+<span class="sep"></span>
 <button onclick="setZoom(zoom - 0.1)" title="Zoom out (Ctrl+-)">&#128269;&minus;</button>
-<button onclick="setZoom(1.0)" title="Reset zoom (Ctrl+0)">1:1</button>
+<button id="zoomlabel" onclick="setZoom(1.0)" title="Reset zoom (Ctrl+0)">100%</button>
 <button onclick="setZoom(zoom + 0.1)" title="Zoom in (Ctrl+=)">&#128269;+</button>
 <span class="sep"></span>
 <button onclick="toggleHelp()" title="Keyboard shortcuts">&#10067; Help</button>
