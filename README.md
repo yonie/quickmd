@@ -139,6 +139,7 @@ Renaming the script to `quickmd.pyw` has the same effect when double-clicking it
 | Function | Control |
 |----------|---------|
 | Open file | Ctrl+O or "Open..." button |
+| Paste clipboard text as a new document | Ctrl+V or "Paste" button |
 | Save a copy (including edits) | Ctrl+S or "Save as..." button |
 | Reload file | Ctrl+R |
 | Toggle raw source (editable) | Ctrl+U or "Raw" button |

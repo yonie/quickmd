@@ -220,6 +220,16 @@ function toggleHelp() {
     h.hidden = !h.hidden;
 }
 
+function doPaste() {
+    pywebview.api.paste_clipboard().then(function (text) {
+        if (!text) return;
+        rawText = text;
+        dirty = true;
+        if (rawMode) document.getElementById('rawview').value = text;
+        else showRaw(true);
+    });
+}
+
 function doCopy() {
     var sel = '';
     var ta = document.getElementById('rawview');
@@ -246,6 +256,7 @@ window.addEventListener('keydown', function (e) {
     else if (e.key === '-') { setZoom(zoom - 0.1); e.preventDefault(); }
     else if (e.key === '0') { setZoom(1.0); e.preventDefault(); }
     else if (e.key === 's') { pywebview.api.save_as(rawText); e.preventDefault(); }
+    else if (e.key === 'v' && !rawMode) { doPaste(); e.preventDefault(); }
     else if (e.key === 'u') { toggleRaw(); e.preventDefault(); }
     else if (e.key === 'o') { pywebview.api.open_dialog(); e.preventDefault(); }
     else if (e.key === 'r') { pywebview.api.reload(); e.preventDefault(); }
@@ -279,6 +290,7 @@ PAGE = """<!DOCTYPE html>
 <body>
 <div id="toolbar" onmousedown="event.preventDefault()">
 <button onclick="pywebview.api.open_dialog()" title="Open a file (Ctrl+O)">&#128194; Open...</button>
+<button onclick="doPaste()" title="Paste clipboard text as a new document (Ctrl+V)">&#128203; Paste</button>
 <button onclick="pywebview.api.save_as(rawText)" title="Save a copy, including your edits (Ctrl+S)">&#128190; Save as...</button>
 <span class="sep"></span>
 <button id="copybtn" onclick="doCopy()" title="Copy selection, or the whole source">&#128196; Copy</button>
@@ -293,6 +305,7 @@ PAGE = """<!DOCTYPE html>
 <div id="help" hidden onclick="toggleHelp()">
 <div class="card">
 <div class="row"><kbd>Ctrl+O</kbd> Open a file</div>
+<div class="row"><kbd>Ctrl+V</kbd> Paste clipboard as a new document</div>
 <div class="row"><kbd>Ctrl+S</kbd> Save a copy</div>
 <div class="row"><kbd>Ctrl+C</kbd> Copy selected text</div>
 <div class="row"><kbd>Ctrl+U</kbd> Toggle raw source</div>
@@ -309,9 +322,43 @@ PAGE = """<!DOCTYPE html>
 """
 
 WELCOME = ('<div id="welcome"><h1>QuickMD</h1>'
-           '<p>&#128194; Open a Markdown file (Ctrl+O)</p>'
-           '<p>&#128220; or switch to Raw (Ctrl+U) to write a new one,<br>'
-           'then save it with Save as... (Ctrl+S)</p></div>')
+           '<p>Open a Markdown file with <kbd>Ctrl+O</kbd>,'
+           ' paste clipboard text with <kbd>Ctrl+V</kbd>,<br>'
+           'or switch to Raw with <kbd>Ctrl+U</kbd> to start writing a new one.</p>'
+           '<p>Save your work with <kbd>Ctrl+S</kbd>.</p></div>')
+
+
+def clipboard_text():
+    if sys.platform == "win32":
+        import ctypes
+        CF_UNICODETEXT = 13
+        u32 = ctypes.windll.user32
+        k32 = ctypes.windll.kernel32
+        u32.GetClipboardData.restype = ctypes.c_void_p
+        k32.GlobalLock.restype = ctypes.c_void_p
+        k32.GlobalLock.argtypes = [ctypes.c_void_p]
+        k32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+        if not u32.OpenClipboard(0):
+            return ""
+        try:
+            handle = u32.GetClipboardData(CF_UNICODETEXT)
+            if not handle:
+                return ""
+            ptr = k32.GlobalLock(handle)
+            try:
+                return ctypes.wstring_at(ptr) if ptr else ""
+            finally:
+                k32.GlobalUnlock(handle)
+        finally:
+            u32.CloseClipboard()
+    for cmd in (["wl-paste", "--no-newline"], ["xclip", "-selection", "clipboard", "-o"], ["xsel", "-b"]):
+        try:
+            out = subprocess.run(cmd, capture_output=True, text=True, timeout=3)
+            if out.returncode == 0:
+                return out.stdout
+        except OSError:
+            continue
+    return ""
 
 
 def read_raw(path):
@@ -431,6 +478,9 @@ class Api:
 
     def render_text(self, text):
         return markdown.markdown(text, extensions=markdown_extensions())
+
+    def paste_clipboard(self):
+        return clipboard_text()
 
     def save_as(self, text):
         name = self._path.name if self._path else "untitled.md"
