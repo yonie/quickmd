@@ -1,0 +1,30 @@
+name: build
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to upload the build to"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pywebview markdown pygments pymdown-extensions pyinstaller
+      - run: >
+          pyinstaller --onefile --windowed --name quickmd
+          --collect-submodules markdown --collect-submodules pymdownx
+          quickmd.py
+      - run: gh release upload ${{ github.event.inputs.tag || github.ref_name }} dist/quickmd.exe --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}

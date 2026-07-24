@@ -56,7 +56,9 @@ pip install pywebview markdown pygments pymdown-extensions
 
 ### Windows
 
-Rendering uses the WebView2 runtime that ships with Windows 10 and 11, so only the Python packages are needed:
+A prebuilt `quickmd.exe` that runs without Python is attached to each [release](https://github.com/yonie/quickmd/releases).
+
+To run from source instead: rendering uses the WebView2 runtime that ships with Windows 10 and 11, so only the Python packages are needed:
 
 ```powershell
 pip install pywebview markdown pygments pymdown-extensions
