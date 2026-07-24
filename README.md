@@ -94,10 +94,20 @@ update-desktop-database ~/.local/share/applications/
 
 ## Usage
 
+Linux:
+
 ```bash
 python3 quickmd.py                    # Launch empty, open a file with Ctrl+O
 python3 quickmd.py /path/to/file.md   # Open a specific file
 ```
+
+Windows, use `pythonw` so no console window appears:
+
+```powershell
+pythonw quickmd.py C:\path\to\file.md
+```
+
+Renaming the script to `quickmd.pyw` has the same effect when double-clicking it. The PyInstaller build (`--windowed`) also runs without a console.
 
 ### Keyboard controls
 
