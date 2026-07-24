@@ -175,68 +175,68 @@ def build_page(body, title, base_dir=None):
 
 class Api:
     def __init__(self):
-        self.window = None
-        self.path = None
-        self.mtime = 0
-        self.counter = 0
-        self.temp_dir = tempfile.gettempdir()
-        atexit.register(self.cleanup)
+        self._window = None
+        self._path = None
+        self._mtime = 0
+        self._counter = 0
+        self._temp_dir = tempfile.gettempdir()
+        atexit.register(self._cleanup)
 
-    def temp_file(self):
-        self.counter += 1
-        return os.path.join(self.temp_dir, "quickmd-{}-{}.html".format(os.getpid(), self.counter))
+    def _temp_file(self):
+        self._counter += 1
+        return os.path.join(self._temp_dir, "quickmd-{}-{}.html".format(os.getpid(), self._counter))
 
-    def cleanup(self):
-        for f in glob.glob(os.path.join(self.temp_dir, "quickmd-{}-*.html".format(os.getpid()))):
+    def _cleanup(self):
+        for f in glob.glob(os.path.join(self._temp_dir, "quickmd-{}-*.html".format(os.getpid()))):
             try:
                 os.remove(f)
             except OSError:
                 pass
 
-    def write_page(self, path):
+    def _write_page(self, path):
         """Render the file (or the welcome page) to a fresh temp file, return its URI."""
         if path is None:
             html = build_page(WELCOME, APP_NAME)
         else:
             html = build_page(render_body(path), path.name + " - " + APP_NAME, path.parent)
-        temp = self.temp_file()
+        temp = self._temp_file()
         with open(temp, "w", encoding="utf-8") as f:
             f.write(html)
         return Path(temp).as_uri()
 
-    def load(self, path):
+    def _load(self, path):
         path = Path(path).resolve()
-        self.path = path
+        self._path = path
         try:
-            self.mtime = path.stat().st_mtime
+            self._mtime = path.stat().st_mtime
         except OSError:
-            self.mtime = 0
-        uri = self.write_page(path)
-        if self.window is not None:
-            self.window.load_url(uri)
-            self.window.set_title(path.name + " - " + APP_NAME)
+            self._mtime = 0
+        uri = self._write_page(path)
+        if self._window is not None:
+            self._window.load_url(uri)
+            self._window.set_title(path.name + " - " + APP_NAME)
         return uri
 
-    def refresh(self):
+    def _refresh(self):
         """Re-render in place, keeping scroll position and zoom."""
-        if self.path is None or self.window is None:
+        if self._path is None or self._window is None:
             return
-        body = render_body(self.path)
-        self.window.evaluate_js(
+        body = render_body(self._path)
+        self._window.evaluate_js(
             "document.getElementById('content').innerHTML = {};".format(json.dumps(body)))
 
-    def watch(self):
+    def _watch(self):
         while True:
             time.sleep(0.5)
-            if self.path is None:
+            if self._path is None:
                 continue
             try:
-                mtime = self.path.stat().st_mtime
+                mtime = self._path.stat().st_mtime
             except OSError:
                 continue
-            if mtime != self.mtime:
-                self.mtime = mtime
-                self.refresh()
+            if mtime != self._mtime:
+                self._mtime = mtime
+                self._refresh()
 
     # Methods below are called from JavaScript via pywebview.api.
 
@@ -244,31 +244,31 @@ class Api:
         if href.startswith(("http://", "https://", "mailto:")):
             webbrowser.open(href)
             return
-        if self.path is None:
+        if self._path is None:
             return
-        target = (self.path.parent / href.split("#")[0].split("?")[0]).resolve()
+        target = (self._path.parent / href.split("#")[0].split("?")[0]).resolve()
         if not target.exists():
             return
         if target.suffix.lower() in MARKDOWN_SUFFIXES:
-            self.load(target)
+            self._load(target)
         elif sys.platform == "win32":
             os.startfile(target)
         else:
             subprocess.Popen(["xdg-open", str(target)])
 
     def open_dialog(self):
-        result = self.window.create_file_dialog(
+        result = self._window.create_file_dialog(
             webview.OPEN_DIALOG,
             file_types=("Markdown files (*.md;*.markdown;*.mdown;*.mkd;*.txt)", "All files (*.*)"))
         if result:
-            self.load(result[0])
+            self._load(result[0])
 
     def reload(self):
-        if self.path is not None:
-            self.load(self.path)
+        if self._path is not None:
+            self._load(self._path)
 
     def close(self):
-        self.window.destroy()
+        self._window.destroy()
 
 
 def main():
@@ -281,16 +281,16 @@ def main():
 
     api = Api()
     if path is not None:
-        api.path = path.resolve()
+        api._path = path.resolve()
         try:
-            api.mtime = api.path.stat().st_mtime
+            api._mtime = api._path.stat().st_mtime
         except OSError:
             pass
-    uri = api.write_page(api.path)
-    title = api.path.name + " - " + APP_NAME if api.path else APP_NAME
-    api.window = webview.create_window(
+    uri = api._write_page(api._path)
+    title = api._path.name + " - " + APP_NAME if api._path else APP_NAME
+    api._window = webview.create_window(
         title, url=uri, js_api=api, width=920, height=840, text_select=True)
-    webview.start(lambda: threading.Thread(target=api.watch, daemon=True).start())
+    webview.start(lambda: threading.Thread(target=api._watch, daemon=True).start())
 
 
 if __name__ == "__main__":
