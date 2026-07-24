@@ -92,6 +92,28 @@ chmod +x /path/to/quickmd.py
 update-desktop-database ~/.local/share/applications/
 ```
 
+### Optional Explorer integration (Windows)
+
+This adds QuickMD to the "Open with" list for `.md` files. It only touches the current user's registry, no administrator rights needed. Update the script path accordingly:
+
+```powershell
+$pyw = (Get-Command pythonw).Source
+$cmd = '"{0}" "C:\path\to\quickmd.py" "%1"' -f $pyw
+New-Item 'HKCU:\Software\Classes\QuickMD.md\shell\open\command' -Force | Out-Null
+Set-ItemProperty 'HKCU:\Software\Classes\QuickMD.md' -Name '(default)' -Value 'Markdown Document'
+Set-ItemProperty 'HKCU:\Software\Classes\QuickMD.md\shell\open' -Name 'FriendlyAppName' -Value 'QuickMD'
+Set-ItemProperty 'HKCU:\Software\Classes\QuickMD.md\shell\open\command' -Name '(default)' -Value $cmd
+if (-not (Test-Path 'HKCU:\Software\Classes\.md\OpenWithProgids')) { New-Item 'HKCU:\Software\Classes\.md\OpenWithProgids' -Force | Out-Null }
+Set-ItemProperty 'HKCU:\Software\Classes\.md\OpenWithProgids' -Name 'QuickMD.md' -Value ''
+```
+
+To remove it again:
+
+```powershell
+Remove-Item 'HKCU:\Software\Classes\QuickMD.md' -Recurse
+Remove-ItemProperty 'HKCU:\Software\Classes\.md\OpenWithProgids' -Name 'QuickMD.md'
+```
+
 ## Usage
 
 Linux:
