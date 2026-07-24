@@ -123,7 +123,14 @@ kbd {
     background: rgba(129, 139, 152, 0.18);
     border: 1px solid #d8dee4; border-radius: 4px;
 }
-#rawview { white-space: pre-wrap; word-break: break-word; }
+#rawview {
+    display: block; width: 100%; min-height: calc(100vh - 160px);
+    border: none; outline: none; resize: none; padding: 0;
+    background: transparent; color: inherit;
+    font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    font-size: 85%; line-height: 1.6;
+    white-space: pre-wrap; word-break: break-word;
+}
 #welcome { text-align: center; color: #59636e; margin-top: 30vh; }
 @media (prefers-color-scheme: dark) {
     body { color: #e6edf3; background: #1e1e1e; }
@@ -146,6 +153,7 @@ SCRIPT = """
 var rawText = __RAW__;
 var rawMode = false;
 var renderedHtml = null;
+var dirty = false;
 var zoom = 1.0;
 try { zoom = parseFloat(sessionStorage.getItem('quickmd-zoom')) || 1.0; } catch (e) {}
 
@@ -163,11 +171,19 @@ function showRaw(on) {
     if (on) {
         renderedHtml = c.innerHTML;
         c.innerHTML = '';
-        var pre = document.createElement('pre');
-        pre.id = 'rawview';
-        pre.textContent = rawText;
-        c.appendChild(pre);
+        var ta = document.createElement('textarea');
+        ta.id = 'rawview';
+        ta.value = rawText;
+        ta.spellcheck = false;
+        ta.addEventListener('input', function () { rawText = ta.value; dirty = true; });
+        c.appendChild(ta);
     } else {
+        if (dirty) {
+            pywebview.api.render_text(rawText).then(function (html) {
+                renderedHtml = html;
+                if (!rawMode) c.innerHTML = html;
+            });
+        }
         c.innerHTML = renderedHtml;
     }
     rawMode = on;
@@ -177,11 +193,12 @@ function showRaw(on) {
 function toggleRaw() { showRaw(!rawMode); }
 
 function quickmdUpdate(html, raw) {
+    if (dirty) return;
     rawText = raw;
     renderedHtml = html;
     if (rawMode) {
-        var pre = document.getElementById('rawview');
-        if (pre) pre.textContent = raw;
+        var ta = document.getElementById('rawview');
+        if (ta) ta.value = raw;
     } else {
         document.getElementById('content').innerHTML = html;
     }
@@ -204,7 +221,11 @@ function toggleHelp() {
 }
 
 function doCopy() {
-    var text = window.getSelection().toString() || rawText;
+    var sel = '';
+    var ta = document.getElementById('rawview');
+    if (ta) sel = ta.value.substring(ta.selectionStart, ta.selectionEnd);
+    else sel = window.getSelection().toString();
+    var text = sel || rawText;
     function done() {
         var b = document.getElementById('copybtn');
         b.textContent = '\\u2714 Copied';
@@ -224,6 +245,7 @@ window.addEventListener('keydown', function (e) {
     if (e.key === '=' || e.key === '+') { setZoom(zoom + 0.1); e.preventDefault(); }
     else if (e.key === '-') { setZoom(zoom - 0.1); e.preventDefault(); }
     else if (e.key === '0') { setZoom(1.0); e.preventDefault(); }
+    else if (e.key === 's') { pywebview.api.save_as(rawText); e.preventDefault(); }
     else if (e.key === 'u') { toggleRaw(); e.preventDefault(); }
     else if (e.key === 'o') { pywebview.api.open_dialog(); e.preventDefault(); }
     else if (e.key === 'r') { pywebview.api.reload(); e.preventDefault(); }
@@ -257,6 +279,7 @@ PAGE = """<!DOCTYPE html>
 <body>
 <div id="toolbar" onmousedown="event.preventDefault()">
 <button onclick="pywebview.api.open_dialog()" title="Open a file (Ctrl+O)">&#128194; Open...</button>
+<button onclick="pywebview.api.save_as(rawText)" title="Save a copy, including your edits (Ctrl+S)">&#128190; Save as...</button>
 <span class="sep"></span>
 <button id="copybtn" onclick="doCopy()" title="Copy selection, or the whole source">&#128196; Copy</button>
 <button id="rawbtn" onclick="toggleRaw()" title="Toggle raw Markdown source (Ctrl+U)">&#128220; Raw</button>
@@ -270,6 +293,7 @@ PAGE = """<!DOCTYPE html>
 <div id="help" hidden onclick="toggleHelp()">
 <div class="card">
 <div class="row"><kbd>Ctrl+O</kbd> Open a file</div>
+<div class="row"><kbd>Ctrl+S</kbd> Save a copy</div>
 <div class="row"><kbd>Ctrl+C</kbd> Copy selected text</div>
 <div class="row"><kbd>Ctrl+U</kbd> Toggle raw source</div>
 <div class="row"><kbd>Ctrl+R</kbd> Reload file</div>
@@ -284,7 +308,10 @@ PAGE = """<!DOCTYPE html>
 </html>
 """
 
-WELCOME = '<div id="welcome"><h1>QuickMD</h1><p>Open a Markdown file with Ctrl+O</p></div>'
+WELCOME = ('<div id="welcome"><h1>QuickMD</h1>'
+           '<p>&#128194; Open a Markdown file (Ctrl+O)</p>'
+           '<p>&#128220; or switch to Raw (Ctrl+U) to write a new one,<br>'
+           'then save it with Save as... (Ctrl+S)</p></div>')
 
 
 def read_raw(path):
@@ -401,6 +428,26 @@ class Api:
             file_types=("Markdown files (*.md;*.markdown;*.mdown;*.mkd;*.txt)", "All files (*.*)"))
         if result:
             self._load(result[0])
+
+    def render_text(self, text):
+        return markdown.markdown(text, extensions=markdown_extensions())
+
+    def save_as(self, text):
+        name = self._path.name if self._path else "untitled.md"
+        result = self._window.create_file_dialog(
+            webview.SAVE_DIALOG, save_filename=name,
+            file_types=("Markdown files (*.md;*.markdown;*.mdown;*.mkd;*.txt)", "All files (*.*)"))
+        if not result:
+            return
+        if isinstance(result, (list, tuple)):
+            result = result[0]
+        target = Path(result)
+        try:
+            target.write_text(text, encoding="utf-8")
+        except OSError as e:
+            print("Could not save {}: {}".format(target, e), file=sys.stderr)
+            return
+        self._load(target)
 
     def reload(self):
         if self._path is not None:

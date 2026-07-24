@@ -14,7 +14,7 @@ A simple Markdown viewer for Linux and Windows. Opens a rendered view of a Markd
 - Relative links to other Markdown files open in the same window
 - External links open in the default browser
 - Zoom with Ctrl + scroll wheel
-- Read-only, the file is never modified
+- The raw view is editable; "Save as..." writes a copy, so the opened file is never modified in place
 
 ## Installation
 
@@ -139,8 +139,9 @@ Renaming the script to `quickmd.pyw` has the same effect when double-clicking it
 | Function | Control |
 |----------|---------|
 | Open file | Ctrl+O or "Open..." button |
+| Save a copy (including edits) | Ctrl+S or "Save as..." button |
 | Reload file | Ctrl+R |
-| Toggle raw source | Ctrl+U or "Raw" button |
+| Toggle raw source (editable) | Ctrl+U or "Raw" button |
 | Copy selection, or the whole source | "Copy" button |
 | Copy selected text | Ctrl+C |
 | Zoom in/out | Ctrl + scroll wheel, Ctrl+= / Ctrl+-, toolbar buttons |
